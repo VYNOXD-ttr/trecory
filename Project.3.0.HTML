@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panas & Pendinginan Chip</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#171c24; --card2:#1e2530; --text:#e8ecf2; --muted:#9aa6b8;
+    --hot:#ff5a36; --warm:#ffb020; --cool:#3ab8ff; --ok:#2ecc8f; --line:#2a3342;
+    --text2:var(--text2); --hdr:rgba(14,17,22,.95); --hg1:#3a1208; --hg2:#171c24; --hg3:#0b2a3d;
+    --svgl:#b4c0d0; --svgn:#8896ab; --fan:#232b38; --hole:#0e1116; color-scheme:dark;
+  }
+  [data-theme="light"]{
+    --bg:#f3f6fb; --card:#ffffff; --card2:#eaf0f8; --text:#16202e; --muted:#5a6a80; --line:#d3dce9;
+    --text2:#334257; --hdr:rgba(243,246,251,.95); --hg1:#ffe3d8; --hg2:#ffffff; --hg3:#d9efff;
+    --svgl:#3b4a60; --svgn:#6a7a90; --fan:#dfe6f0; --hole:#f3f6fb; color-scheme:light;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+  header{position:sticky;top:0;z-index:10;background:var(--hdr);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .bar{max-width:1000px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+  .logo{font-weight:800;font-size:1.05rem;background:linear-gradient(90deg,var(--hot),var(--cool));-webkit-background-clip:text;background-clip:text;color:transparent}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  nav button{background:var(--card);color:var(--muted);border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-size:.9rem;cursor:pointer;transition:.2s}
+  nav button:hover{color:var(--text)}
+  nav button.active{background:linear-gradient(90deg,var(--hot),var(--warm));color:#1a0d05;border-color:transparent;font-weight:700}
+  main{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+  .page{display:none;animation:fade .35s ease}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  h1{font-size:clamp(1.7rem,5vw,2.6rem);line-height:1.2;margin-bottom:10px}
+  h2{font-size:clamp(1.25rem,3.5vw,1.6rem);margin:26px 0 10px}
+  h3{font-size:1.05rem;margin-bottom:6px}
+  p{color:var(--text2);margin-bottom:12px}
+  .hero{background:linear-gradient(135deg,var(--hg1) 0%,var(--hg2) 55%,var(--hg3) 100%);border:1px solid var(--line);border-radius:18px;padding:26px 20px;margin-bottom:18px}
+  .tag{display:inline-block;font-size:.75rem;padding:3px 10px;border-radius:999px;background:rgba(255,90,54,.15);color:var(--hot);margin-bottom:10px;font-weight:600}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .card .big{font-size:1.8rem;font-weight:800;color:var(--warm)}
+  .small{font-size:.82rem;color:var(--muted)}
+  .btn{background:linear-gradient(90deg,var(--hot),var(--warm));color:#1a0d05;border:none;padding:11px 20px;border-radius:10px;font-weight:700;cursor:pointer;font-size:.95rem;margin-top:6px}
+  .btn.cool{background:linear-gradient(90deg,var(--cool),#7be0ff)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--card2);color:var(--muted);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+  .barrow{margin:10px 0}
+  .barrow .lbl{display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px}
+  .track{background:var(--card2);border-radius:8px;height:18px;overflow:hidden}
+  .fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--warm),var(--hot));width:0;transition:width 1s ease}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .tabs button{background:var(--card2);color:var(--muted);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.85rem}
+  .tabs button.on{background:var(--cool);color:#04202e;font-weight:700;border-color:transparent}
+  label{display:block;font-size:.9rem;margin:14px 0 4px;color:var(--text2)}
+  input[type=range]{width:100%;accent-color:var(--hot);height:30px}
+  select{width:100%;padding:10px;border-radius:8px;background:var(--card2);color:var(--text);border:1px solid var(--line);font-size:.95rem}
+  .row2{display:grid;gap:14px;grid-template-columns:1fr}
+  @media(min-width:760px){.row2{grid-template-columns:1fr 1fr}}
+  .temp{font-size:3rem;font-weight:800;line-height:1}
+  .gauge{height:20px;border-radius:10px;background:linear-gradient(90deg,var(--cool),var(--ok) 35%,var(--warm) 65%,var(--hot));position:relative;margin:16px 0 8px}
+  .needle{position:absolute;top:-6px;width:4px;height:32px;background:var(--text);border-radius:2px;left:0;transition:left .4s}
+  .status{display:inline-block;padding:5px 12px;border-radius:8px;font-weight:700;font-size:.9rem;margin-top:8px}
+  .s-ok{background:rgba(46,204,143,.15);color:var(--ok)}
+  .s-warn{background:rgba(255,176,32,.15);color:var(--warm)}
+  .s-bad{background:rgba(255,90,54,.18);color:var(--hot)}
+  .opt{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;margin:6px 0;cursor:pointer;font-size:.92rem}
+  .opt.right{border-color:var(--ok);background:rgba(46,204,143,.12)}
+  .opt.wrong{border-color:var(--hot);background:rgba(255,90,54,.12)}
+  ul{padding-left:20px;margin-bottom:12px;color:var(--text2)}
+  li{margin:4px 0}
+  .quote{border-left:4px solid var(--cool);background:var(--card);padding:14px 16px;border-radius:0 12px 12px 0;margin:12px 0}
+  .viz{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:14px}
+  .viz svg{width:100%;height:auto;display:block;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  .part{cursor:pointer;outline:none}
+  .part .hit{fill:#000;fill-opacity:0;pointer-events:all}
+  .part:hover .shape,.part:focus-visible .shape{stroke:var(--text);stroke-width:2.5}
+  .part.sel .shape{stroke:var(--text);stroke-width:4}
+  .lbl{fill:var(--svgl);font-size:21px;font-family:inherit}
+  .note{fill:var(--svgn);font-size:17px;font-family:inherit;pointer-events:none}
+  .part:hover .lbl,.part.sel .lbl{fill:var(--text);font-weight:700}
+  .infobox{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--warm);border-radius:10px;padding:12px 14px;margin-top:10px;min-height:120px}
+  .infobox p{margin-bottom:6px}
+  .qrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
+  .qrow .t{font-size:.82rem;color:var(--muted);min-width:82px}
+  .qrow button{background:var(--card2);color:var(--muted);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.85rem}
+  .qrow button.on{background:var(--warm);color:#1a0d05;font-weight:700;border-color:transparent}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted);margin:8px 0}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px}
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.78rem;color:var(--muted);margin:2px}
+  .theme{background:var(--card);color:var(--text);border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-size:.9rem;cursor:pointer}
+  .theme:hover{border-color:var(--cool)}
+  .logtop{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  .logtop p{flex:1 1 320px;margin:0}
+  .logbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .logbtns .btn{margin-top:0}
+  .btn.ghost{background:transparent;color:#ff4d6d;border:1px solid var(--line)}
+  .chip-b{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:700;color:#10151c}
+  .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem}
+  .del:hover{color:var(--hot)}
+  #logChart svg{width:100%;height:auto;display:block}
+  .gl{stroke:var(--line);stroke-width:1}
+  .tx{fill:var(--muted);font-size:11px;font-family:inherit}
+  #logLegend div{margin:4px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo">🔥 ChipCool</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <nav id="nav">
+      <button data-p="masalah" class="active">Masalah</button>
+      <button data-p="data">Data & Analisis</button>
+      <button data-p="solusi">Solusi</button>
+      <button data-p="tentang">Tentang</button>
+    </nav>
+    <button class="theme" id="themeBtn" title="Ganti mode gelap/terang">☀️ Terang</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= HALAMAN 1: MASALAH ================= -->
+<section class="page active" id="masalah">
+  <div class="hero">
+    <span class="tag">Pertanyaan Besar</span>
+    <h1>Bagaimana cara menjaga chip tetap dingin agar perangkat tetap cepat dan awet?</h1>
+    <p>Setiap HP, laptop, dan komputer punya chip yang bekerja keras. Semakin keras bekerja, semakin panas. Kalau panasnya tidak dibuang, perangkat jadi lambat bahkan bisa rusak.</p>
+    <button class="btn" onclick="go('data')">Lihat Datanya →</button>
+  </div>
+
+  <h2>Mengapa chip bisa panas?</h2>
+  <p>Chip berisi miliaran transistor kecil. Setiap kali transistor menyala dan mati, sebagian listrik berubah menjadi panas. Panas ini berkumpul di area yang sangat kecil, jadi suhunya naik dengan cepat.</p>
+
+  <div class="grid">
+    <div class="card"><h3>⚡ Listrik jadi panas</h3><p class="small">Hampir semua energi listrik yang dipakai chip akhirnya berubah menjadi panas.</p></div>
+    <div class="card"><h3>📦 Ruang sempit</h3><p class="small">Di HP dan laptop tipis, tidak ada banyak ruang untuk kipas atau pendingin besar.</p></div>
+    <div class="card"><h3>🎮 Beban berat</h3><p class="small">Gaming, edit video, dan AI membuat chip bekerja maksimal sehingga lebih panas.</p></div>
+  </div>
+
+  <h2>Apa dampaknya?</h2>
+  <p>Klik tiap dampak untuk melihat penjelasannya:</p>
+  <div class="tabs" id="dampakTabs">
+    <button class="on" data-i="0">🐢 Lambat</button>
+    <button data-i="1">🔋 Boros baterai</button>
+    <button data-i="2">⏳ Cepat rusak</button>
+  </div>
+  <div class="card" id="dampakText"></div>
+</section>
+
+<!-- ================= HALAMAN 2: DATA & ANALISIS ================= -->
+<section class="page" id="data">
+  <span class="tag">Data dan Analisis</span>
+  <h1>Seberapa panas chip kita?</h1>
+  <p>Daya listrik yang dipakai chip (satuan Watt) hampir sama dengan panas yang harus dibuang. Berikut perkiraan kisaran daya tipikal beberapa jenis chip.</p>
+
+  <h2>Grafik: Daya tipikal (perkiraan batas atas)</h2>
+  <div class="card" id="chart"></div>
+
+  <h2>Tabel data</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Jenis chip</th><th>Daya tipikal</th><th>Pendingin umum</th></tr></thead>
+      <tbody>
+        <tr><td>Prosesor HP (SoC)</td><td>± 3 – 10 W</td><td>Pelat logam / graphite</td></tr>
+        <tr><td>Prosesor laptop</td><td>± 15 – 45 W</td><td>Heat pipe + kipas kecil</td></tr>
+        <tr><td>Prosesor PC desktop</td><td>± 65 – 125 W</td><td>Heatsink + kipas besar</td></tr>
+        <tr><td>Kartu grafis (GPU) kelas atas</td><td>± 250 – 450 W</td><td>Kipas ganda/triple, heat pipe</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small" style="margin-top:8px">Sumber: lembar spesifikasi produsen chip — Intel (ark.intel.com), AMD (amd.com), NVIDIA (nvidia.com). Angka berupa kisaran umum dan berbeda tiap model.</p>
+
+  <h2>Memahami angka panas</h2>
+  <div class="grid">
+    <div class="card"><h3>🔌 Watt ≠ Suhu</h3><p class="small"><b>Watt</b> menunjukkan seberapa banyak panas yang dihasilkan. <b>Suhu</b> adalah hasil akhirnya setelah dikurangi kemampuan pendingin. Chip yang sama bisa 60°C atau 95°C tergantung pendinginnya.</p></div>
+    <div class="card"><h3>📋 TDP</h3><p class="small"><b>Thermal Design Power</b> adalah perkiraan panas (Watt) yang harus mampu dibuang pendingin. Makin besar TDP, makin kuat pendingin yang dibutuhkan.</p></div>
+    <div class="card"><h3>🔬 Makin kecil, makin padat</h3><p class="small">Transistor yang makin kecil dan rapat membuat panas menumpuk di area sangat sempit, jadi chip kecil pun bisa sangat panas.</p></div>
+    <div class="card"><h3>🔁 Tiga jalur panas</h3><p class="small"><b>Konduksi</b>: merambat lewat benda padat (chip ke plat). <b>Konveksi</b>: dibawa udara atau cairan (kipas, air). <b>Radiasi</b>: terpancar, porsinya kecil.</p></div>
+  </div>
+
+  <h2>Apa yang membuat chip makin panas?</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Faktor</th><th>Pengaruh</th><th>Penjelasan singkat</th></tr></thead>
+      <tbody>
+        <tr><td>Frekuensi (clock)</td><td>Naik → panas naik</td><td>Transistor berganti lebih sering</td></tr>
+        <tr><td>Voltase</td><td>Naik sedikit → panas naik tajam</td><td>Daya naik kira-kira dengan kuadrat voltase</td></tr>
+        <tr><td>Beban kerja</td><td>Berat → panas naik</td><td>Banyak core bekerja bersamaan</td></tr>
+        <tr><td>Kebocoran arus</td><td>Panas dasar</td><td>Ada arus "bocor" walau chip santai</td></tr>
+        <tr><td>Debu & ventilasi</td><td>Tersumbat → panas naik</td><td>Aliran udara terhambat</td></tr>
+        <tr><td>Suhu ruangan</td><td>Naik → chip ikut naik</td><td>Udara pendingin sudah hangat</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Batas suhu CPU yang wajar</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Kondisi</th><th>Kisaran suhu</th><th>Artinya</th></tr></thead>
+      <tbody>
+        <tr><td>Idle (santai)</td><td>30–50°C</td><td>Aman</td></tr>
+        <tr><td>Beban berat</td><td>60–85°C</td><td>Masih wajar</td></tr>
+        <tr><td>Mendekati batas</td><td>90–100°C</td><td>Throttling mulai aktif</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small" style="margin-top:8px">Kisaran bersifat umum dan berbeda tiap model chip. Overclock (menaikkan clock) menambah panas, sedangkan <b>undervolt</b> (menurunkan voltase) bisa menurunkannya.</p>
+
+  <h2>Analisis</h2>
+  <div class="grid">
+    <div class="card"><div class="big">100°C</div><p class="small">Suhu sekitar ini umumnya jadi batas ketika prosesor mulai menurunkan kecepatannya sendiri (thermal throttling).</p></div>
+    <div class="card"><div class="big">×2</div><p class="small">Aturan praktis di dunia elektronik: setiap kenaikan sekitar 10°C, laju kerusakan komponen bisa naik sekitar dua kali lipat.</p></div>
+    <div class="card"><div class="big">45×</div><p class="small">Dari HP (≈10 W) ke GPU besar (≈450 W), panas yang harus dibuang bisa 45 kali lebih besar.</p></div>
+  </div>
+  <div class="quote"><strong>Kesimpulan analisis:</strong> Semakin besar daya chip, semakin kuat sistem pendinginnya harus dibuat. Pendingin yang kurang akan membuat chip melambat.</div>
+  <button class="btn" onclick="go('solusi')">Lihat Solusinya →</button>
+</section>
+
+<!-- ================= HALAMAN 3: SOLUSI ================= -->
+<section class="page" id="solusi">
+  <span class="tag">Solusi</span>
+  <h1>Coba sendiri: simulasi pendinginan</h1>
+  <p>Geser pengaturan di bawah untuk melihat suhu chip. Model sederhana: <em>suhu chip = suhu ruangan + (daya × hambatan panas pendingin)</em>.</p>
+
+  <div class="row2">
+    <div class="card">
+      <h3>⚙️ Pengaturan</h3>
+      <label>Daya chip: <strong id="vP">65</strong> W</label>
+      <input type="range" id="P" min="5" max="300" value="65">
+      <label>Suhu ruangan: <strong id="vA">30</strong> °C</label>
+      <input type="range" id="A" min="15" max="40" value="30">
+      <label>Jenis pendingin</label>
+      <select id="C">
+        <option value="1.2">Heatsink pasif (tanpa kipas)</option>
+        <option value="0.55" selected>Heat pipe + kipas (laptop)</option>
+        <option value="0.45">Heatsink + kipas (PC)</option>
+        <option value="0.25">Water cooling (AIO)</option>
+      </select>
+      <label>Pasta termal</label>
+      <select id="T">
+        <option value="0.05" selected>Pasta termal baru & rata</option>
+        <option value="0.20">Kering / tidak ada</option>
+      </select>
+    </div>
+    <div class="card">
+      <h3>🌡️ Hasil</h3>
+      <div class="temp" id="temp">--</div>
+      <div class="gauge"><div class="needle" id="needle"></div></div>
+      <div class="small" style="display:flex;justify-content:space-between"><span>40°C</span><span>70°C</span><span>110°C</span></div>
+      <span class="status" id="status"></span>
+      <p id="life" class="small" style="margin-top:12px"></p>
+    </div>
+  </div>
+
+  <h2>🔍 Lihat apa yang sebenarnya terjadi di dalam</h2>
+  <p>Gambar ini adalah penampang samping sistem pendingin chip. Ubah pengaturan dengan tombol cepat di bawah, lalu <strong>ketuk bagian gambar</strong> (chip, pasta, plat, pipa, sirip, kipas) untuk membaca penjelasannya.</p>
+  <div class="viz">
+    <div id="quick"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:#ff5a36"></i>Panas dari chip</span>
+      <span><i class="dot" style="background:#3ab8ff"></i>Udara pendingin</span>
+    </div>
+
+    <svg id="vizSvg" viewBox="0 0 700 420" role="img" aria-label="Penampang sistem pendingin chip">
+      <!-- Papan sirkuit -->
+      <rect x="90" y="376" width="520" height="26" rx="4" fill="#1f5d46"/>
+      <text x="104" y="395" class="note">papan sirkuit</text>
+
+      <!-- Udara (di belakang sirip) -->
+      <g id="airG" style="pointer-events:none"></g>
+
+      <!-- Sirip pendingin -->
+      <g class="part" id="p-fins" tabindex="0" role="button" aria-label="Sirip pendingin">
+        <rect class="hit" x="200" y="165" width="300" height="125"/>
+        <rect class="shape" x="210" y="172" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="187" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="202" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="217" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="232" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="247" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="262" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <rect class="shape" x="210" y="277" width="280" height="7" rx="2" fill="#7f93ab"/>
+        <text class="lbl" id="finsLbl" x="508" y="238">Sirip pendingin</text>
+      </g>
+
+      <!-- Heat pipe -->
+      <g class="part" id="p-pipe" tabindex="0" role="button" aria-label="Heat pipe">
+        <rect class="hit" x="280" y="165" width="34" height="140"/>
+        <rect class="hit" x="400" y="165" width="34" height="140"/>
+        <rect class="shape" x="290" y="172" width="14" height="128" rx="7" fill="#d68b4f"/>
+        <rect class="shape" x="410" y="172" width="14" height="128" rx="7" fill="#d68b4f"/>
+        <line x1="200" y1="240" x2="288" y2="240" stroke="#6b788c" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <text class="lbl" x="194" y="246" text-anchor="end">Heat pipe</text>
+      </g>
+
+      <!-- Plat tembaga -->
+      <g class="part" id="p-base" tabindex="0" role="button" aria-label="Plat tembaga">
+        <rect class="hit" x="225" y="290" width="250" height="34"/>
+        <rect class="shape" x="230" y="294" width="240" height="30" rx="4" fill="#b0703a"/>
+        <text class="lbl" x="484" y="316">Plat tembaga</text>
+      </g>
+
+      <!-- Pasta termal -->
+      <g class="part" id="p-paste" tabindex="0" role="button" aria-label="Pasta termal">
+        <rect class="hit" x="262" y="321" width="176" height="14"/>
+        <rect class="shape" id="pasteR" x="270" y="324" width="160" height="8" fill="#dfe5ee"/>
+        <g id="gaps" style="display:none;pointer-events:none">
+          <ellipse cx="290" cy="328" rx="7" ry="3" style="fill:var(--hole)"/>
+          <ellipse cx="320" cy="328" rx="7" ry="3" style="fill:var(--hole)"/>
+          <ellipse cx="350" cy="328" rx="7" ry="3" style="fill:var(--hole)"/>
+          <ellipse cx="380" cy="328" rx="7" ry="3" style="fill:var(--hole)"/>
+          <ellipse cx="410" cy="328" rx="7" ry="3" style="fill:var(--hole)"/>
+        </g>
+        <line x1="224" y1="329" x2="268" y2="329" stroke="#6b788c" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <text class="lbl" x="218" y="335" text-anchor="end">Pasta termal</text>
+      </g>
+
+      <!-- Chip -->
+      <g class="part" id="p-chip" tabindex="0" role="button" aria-label="Chip">
+        <rect class="hit" x="262" y="334" width="176" height="42"/>
+        <rect id="chipHalo" x="260" y="326" width="180" height="58" rx="12" fill="#2ecc8f" fill-opacity="0.2" style="pointer-events:none"/>
+        <rect class="shape" id="chipR" x="270" y="332" width="160" height="44" rx="6" fill="#2ecc8f"/>
+        <text id="chipTxt" x="350" y="361" text-anchor="middle" font-size="24" font-weight="800" fill="#0b0f14" style="pointer-events:none">--</text>
+        <text class="lbl" x="448" y="360">Chip</text>
+      </g>
+
+      <!-- Partikel panas -->
+      <g id="heatG" style="pointer-events:none"></g>
+
+      <!-- Kipas -->
+      <g class="part" id="p-fan" tabindex="0" role="button" aria-label="Kipas">
+        <rect class="hit" x="262" y="24" width="176" height="140"/>
+        <rect class="shape" id="fanFrame" x="268" y="28" width="164" height="130" rx="14" style="fill:var(--fan)" stroke="#3b475a" stroke-width="2"/>
+        <g id="blades" fill="#9db0c8">
+          <ellipse cx="350" cy="63" rx="15" ry="28" transform="rotate(0 350 93)"/>
+          <ellipse cx="350" cy="63" rx="15" ry="28" transform="rotate(90 350 93)"/>
+          <ellipse cx="350" cy="63" rx="15" ry="28" transform="rotate(180 350 93)"/>
+          <ellipse cx="350" cy="63" rx="15" ry="28" transform="rotate(270 350 93)"/>
+        </g>
+        <circle cx="350" cy="93" r="9" style="fill:var(--hole)"/>
+        <text class="lbl" id="fanLbl" x="448" y="100">Kipas</text>
+      </g>
+
+      <text class="note" x="258" y="64" text-anchor="end">udara dingin ↓</text>
+      <text class="note" x="198" y="196" text-anchor="end">← udara hangat</text>
+      <text class="note" x="502" y="196">udara hangat →</text>
+    </svg>
+
+    <button class="btn cool" id="tourBtn">▶ Ikuti jalur panas</button>
+    <div class="infobox" id="info"></div>
+  </div>
+
+  <h2>Cara menjaga chip tetap dingin</h2>
+  <div class="grid">
+    <div class="card"><h3>🧴 Pasta termal</h3><p class="small">Mengisi celah kecil antara chip dan pendingin agar panas lebih mudah pindah.</p></div>
+    <div class="card"><h3>🌀 Kipas & aliran udara</h3><p class="small">Membuang udara panas keluar. Bersihkan debu secara berkala supaya tidak tersumbat.</p></div>
+    <div class="card"><h3>🧪 Heat pipe & liquid</h3><p class="small">Memindahkan panas dengan cairan di dalam pipa tembaga atau radiator, lebih efektif dari logam biasa.</p></div>
+    <div class="card"><h3>🧠 Atur beban kerja</h3><p class="small">Hindari menutup lubang udara, jangan main game sambil mengisi daya di kasur, turunkan pengaturan grafis.</p></div>
+  </div>
+
+  <h2>Kuis (10 soal acak)</h2>
+  <div class="card" id="quiz"></div>
+
+  <h2>📒 Pencatatan Data Percobaan</h2>
+  <div class="card">
+    <div class="logtop">
+      <p class="small">Atur simulasi di atas, lalu klik <b>Catat Data</b> untuk menyimpan satu baris hasil (daya, suhu ruangan, pendingin, pasta, suhu chip, ΔT). Ulangi dengan kombinasi berbeda (minimal 3 titik daya berbeda per jenis pendingin) untuk membandingkan hasil dan melihat garis tren.</p>
+      <div class="logbtns">
+        <button class="btn" id="logAdd">➕ Catat Data</button>
+        <button class="btn cool" id="logCsv">⬇️ Unduh CSV</button>
+        <button class="btn ghost" id="logClr">🗑️ Hapus Semua</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>No</th><th>Daya (W)</th><th>Ruang (°C)</th><th>Pendingin</th><th>Pasta</th><th>Suhu chip (°C)</th><th>ΔT (°C)</th><th></th></tr></thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+      <div>
+        <h3>Grafik Suhu chip vs Daya</h3>
+        <div id="logChart"></div>
+        <div id="logLegend" class="small"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HALAMAN 4: TENTANG ================= -->
+<section class="page" id="tentang">
+  <span class="tag">Tentang</span>
+  <h1>Tentang Proyek</h1>
+
+  <h2>Anggota & peran</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Nama</th><th>Peran</th></tr></thead>
+      <tbody>
+        <tr><td>Muhammad Arkananta Permana (23/X-rpl)</td><td>Penyusun konten / Pembuat Kode</td></tr>
+        <tr><td>Gabriel Lightning Elmagnifico (16/X-rpl)</td><td>Pencari data dan sumber</td></tr>
+        <tr><td>Benedictus Taffarel Yeshua Ariyanto (10/X-rpl)</td><td>Desain tampilan / penguji</td></tr>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Daftar sumber</h2>
+  <ul>
+    <li>Intel, spesifikasi prosesor — ark.intel.com</li>
+    <li>AMD, spesifikasi prosesor — amd.com</li>
+    <li>NVIDIA, spesifikasi kartu grafis — nvidia.com</li>
+    <li>Wikipedia, "Thermal design power" dan "Thermal throttling" (penjelasan umum)</li>
+  </ul>
+  <p class="small">Catatan: nilai hambatan panas pada simulasi adalah angka ilustrasi untuk pembelajaran, bukan hasil pengukuran alat tertentu.</p>
+
+  <h2>Kesimpulan</h2>
+  <div class="quote">
+    <p><strong>Pertanyaan besar:</strong> Bagaimana cara menjaga chip tetap dingin agar perangkat tetap cepat dan awet?</p>
+    <p><strong>Jawaban:</strong> Chip menghasilkan panas dari listrik yang dipakainya, dan panas itu harus dibuang. Caranya adalah memakai pendingin yang sesuai dengan daya chip (heatsink, kipas, heat pipe, atau water cooling), memasang pasta termal dengan benar, menjaga aliran udara tetap lancar, dan tidak memaksa chip bekerja terus-menerus di beban maksimal. Dengan begitu chip tidak melambat dan umurnya lebih panjang.</p>
+  </div>
+</section>
+
+</main>
+<footer>Proyek Energy Water • Panas & Pendinginan Chip</footer>
+
+<script>
+  // ---------- Navigasi halaman ----------
+  const pages = ['masalah','data','solusi','tentang'];
+  function go(id){
+    pages.forEach(p=>document.getElementById(p).classList.toggle('active',p===id));
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.p===id));
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(id==='data') drawChart();
+  }
+  document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.p));
+
+  // ---------- Tab dampak ----------
+  const dampak = [
+    '<h3>🐢 Perangkat jadi lambat</h3><p class="small">Saat terlalu panas, chip otomatis menurunkan kecepatannya agar tidak rusak (thermal throttling). Hasilnya game patah-patah dan aplikasi lemot.</p>',
+    '<h3>🔋 Baterai lebih boros</h3><p class="small">Chip yang panas cenderung boros daya dan panas juga mempercepat penuaan baterai.</p>',
+    '<h3>⏳ Umur komponen lebih pendek</h3><p class="small">Suhu tinggi dalam waktu lama mempercepat kerusakan komponen elektronik.</p>'
+  ];
+  const dt = document.getElementById('dampakText');
+  dt.innerHTML = dampak[0];
+  document.querySelectorAll('#dampakTabs button').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('#dampakTabs button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); dt.innerHTML = dampak[b.dataset.i];
+    };
+  });
+
+  // ---------- Grafik batang ----------
+  const chipData = [
+    ['Prosesor HP', 10],
+    ['Prosesor laptop', 45],
+    ['Prosesor PC desktop', 125],
+    ['GPU kelas atas', 450]
+  ];
+  function drawChart(){
+    const c = document.getElementById('chart');
+    c.innerHTML = chipData.map(d=>`
+      <div class="barrow">
+        <div class="lbl"><span>${d[0]}</span><strong>${d[1]} W</strong></div>
+        <div class="track"><div class="fill" data-w="${d[1]/450*100}"></div></div>
+      </div>`).join('') + '<p class="small" style="margin-top:8px">Sumber: lembar spesifikasi Intel, AMD, NVIDIA (kisaran umum).</p>';
+    setTimeout(()=>c.querySelectorAll('.fill').forEach(f=>f.style.width=f.dataset.w+'%'),50);
+  }
+
+  // ---------- Simulator ----------
+  const $ = id=>document.getElementById(id);
+  function sim(){
+    const P=+$('P').value, A=+$('A').value, C=+$('C').value, T=+$('T').value;
+    $('vP').textContent=P; $('vA').textContent=A;
+    const temp = A + P*(C+T);
+    $('temp').textContent = temp.toFixed(0)+'°C';
+    $('temp').style.color = temp<70?'#2ecc8f':temp<90?'#ffb020':'#ff5a36';
+    const pos = Math.max(0,Math.min(100,(temp-40)/70*100));
+    $('needle').style.left = `calc(${pos}% - 2px)`;
+    const s=$('status');
+    if(temp<70){s.className='status s-ok';s.textContent='✅ Aman & dingin';}
+    else if(temp<90){s.className='status s-warn';s.textContent='⚠️ Hangat, perlu diperhatikan';}
+    else if(temp<100){s.className='status s-bad';s.textContent='🔥 Panas sekali';}
+    else{s.className='status s-bad';s.textContent='🚨 Throttling! Chip akan melambat';}
+    const f = Math.pow(2,(70-temp)/10);
+    $('life').textContent = `Indikasi kasar umur komponen dibanding suhu 70°C: ${f>=1?f.toFixed(1)+'× lebih awet':(1/f).toFixed(1)+'× lebih cepat rusak'} (aturan praktis, bukan angka pasti).`;
+    if(window.updateViz) updateViz();
+  }
+  ['P','A','C','T'].forEach(id=>$(id).addEventListener('input',sim));
+  sim();
+
+  // ---------- Visualisasi interaktif ----------
+  (function(){
+    const NS='http://www.w3.org/2000/svg';
+    const hex=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+    const lerpC=(a,b,t)=>{const A=hex(a),B=hex(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';};
+    function tempColor(t){
+      if(t<=50) return '#2ecc8f';
+      if(t<=80) return lerpC('#2ecc8f','#ffb020',(t-50)/30);
+      return lerpC('#ffb020','#ff3b1f',Math.min(1,(t-80)/25));
+    }
+    function heatColor(p){
+      return p<0.55 ? lerpC('#ff5a36','#ffb020',p/0.55) : lerpC('#ffb020','#3ab8ff',(p-0.55)/0.45);
+    }
+
+    const V={t:60,P:65,R:0.6,ci:1,bad:false};
+    const finsLabels=['Heatsink pasif','Sirip pendingin','Sirip pendingin','Radiator'];
+    const fanSpin=[0,10,7,8];
+    const airF=[0.25,1,0.9,1.2];
+    const coolerNames=['Heatsink pasif (tanpa kipas)','Heat pipe + kipas laptop','Heatsink + kipas PC','Water cooling (radiator)'];
+
+    // ----- Info tiap bagian -----
+    const parts={
+      chip:{id:'p-chip',t:'🧠 Chip (prosesor)',
+        p:'Chip adalah otak perangkat. Setiap kali ia bekerja, listrik yang dipakainya berubah menjadi panas. Di sinilah semua panas bermula. Kalau panas tidak segera dipindahkan, suhu chip naik dan ia akan menurunkan kecepatannya sendiri agar tidak rusak.',
+        s:()=>`Saat ini: chip memakai ${V.P} W, suhunya sekitar ${Math.round(V.t)}°C.`+(V.t>=100?' Sudah mencapai batas throttling, chip melambat!':'')},
+      paste:{id:'p-paste',t:'🧴 Pasta termal',
+        p:'Permukaan chip dan logam kelihatan rata, padahal punya celah mikroskopis yang berisi udara. Udara menghantar panas dengan buruk. Pasta termal mengisi celah itu supaya panas bisa pindah dari chip ke plat dengan lancar.',
+        s:()=>V.bad?'Kondisi sekarang: pasta kering/tidak ada. Lihat titik panas melambat dan menumpuk di sini, suhu chip jadi lebih tinggi.':'Kondisi sekarang: pasta baru dan rata, panas mengalir lancar.'},
+      base:{id:'p-base',t:'🟧 Plat tembaga',
+        p:'Tembaga sangat bagus menghantar panas. Plat ini menyerap panas dari chip dan menyebarkannya ke heat pipe, supaya panas tidak menumpuk di satu titik kecil.',
+        s:()=>'Peran: penyerap dan penyebar panas pertama.'},
+      pipe:{id:'p-pipe',t:'🧪 Heat pipe',
+        p:'Pipa tembaga tertutup yang berisi sedikit cairan. Di bagian bawah (panas), cairan menguap dan membawa panas ke atas. Di bagian atas (lebih dingin), uap mengembun lalu cairan kembali ke bawah. Siklus ini memindahkan panas jauh lebih cepat daripada logam padat.',
+        s:()=>'Peran: jalan tol panas dari plat menuju sirip.'},
+      fins:{id:'p-fins',t:'🪜 Sirip pendingin (heatsink)',
+        p:'Lembaran logam tipis yang tersusun rapat membuat permukaan sentuh dengan udara menjadi sangat luas, sehingga panas lebih mudah dilepas ke udara. Pada water cooling, bagian ini berupa radiator.',
+        s:()=>'Pendingin yang dipilih: '+coolerNames[V.ci]+'.'},
+      fan:{id:'p-fan',t:'🌀 Kipas',
+        p:'Kipas meniup udara melewati sirip dan membawa panas pergi. Tanpa kipas, udara di sekitar sirip cepat jadi hangat dan pendinginan melemah. Debu atau lubang udara yang tersumbat membuat aliran udara berkurang dan suhu naik.',
+        s:()=>V.ci===0?'Kondisi sekarang: tanpa kipas, hanya aliran udara alami yang lambat.':'Kondisi sekarang: kipas menyala dan udara dingin terus mengalir.'}
+    };
+    const order=['chip','paste','base','pipe','fins','fan'];
+    let sel=null, prefix='';
+
+    function showInfo(key,pre){
+      sel=key; prefix=pre||'';
+      Object.keys(parts).forEach(k=>$(parts[k].id).classList.toggle('sel',k===key));
+      const d=parts[key];
+      $('info').innerHTML=`<h3>${prefix}${d.t}</h3><p class="small" style="color:var(--text2)">${d.p}</p><p class="small" style="color:var(--warm)">${d.s()}</p>`;
+    }
+    function showDefault(){
+      $('info').innerHTML='<h3>👆 Ketuk bagian pada gambar</h3><p class="small" style="color:var(--text2)">Coba ketuk chip, pasta termal, plat tembaga, heat pipe, sirip, atau kipas. Atau tekan tombol <strong>Ikuti jalur panas</strong> untuk tur otomatis dari chip sampai udara.</p>';
+    }
+    showDefault();
+
+    // ----- Tur -----
+    const tourBtn=$('tourBtn');
+    let tourI=-1, tourT=null;
+    function stopTour(){clearInterval(tourT);tourT=null;tourBtn.textContent='▶ Ikuti jalur panas';}
+    function tourStep(){
+      tourI++;
+      if(tourI>=order.length){stopTour();return;}
+      showInfo(order[tourI],'Langkah '+(tourI+1)+' dari '+order.length+' • ');
+    }
+    tourBtn.onclick=()=>{
+      if(tourT){stopTour();return;}
+      tourI=-1;tourStep();
+      tourT=setInterval(tourStep,4500);
+      tourBtn.textContent='⏹ Berhenti';
+    };
+    Object.keys(parts).forEach(k=>{
+      const el=$(parts[k].id);
+      el.addEventListener('click',()=>{stopTour();showInfo(k);});
+      el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();stopTour();showInfo(k);}});
+    });
+
+    // ----- Tombol cepat -----
+    const Q=[
+      {lab:'Beban chip',items:[['Ringan',20],['Sedang',65],['Berat',150],['Ekstrem',280]],get:()=>+$('P').value,set:v=>{$('P').value=v;}},
+      {lab:'Pendingin',items:[['Pasif',0],['Laptop',1],['PC',2],['Water',3]],get:()=>$('C').selectedIndex,set:v=>{$('C').selectedIndex=v;}},
+      {lab:'Pasta termal',items:[['Baik',0],['Kering',1]],get:()=>$('T').selectedIndex,set:v=>{$('T').selectedIndex=v;}}
+    ];
+    const quick=$('quick');
+    Q.forEach((g,gi)=>{
+      const row=document.createElement('div');row.className='qrow';
+      row.innerHTML=`<span class="t">${g.lab}</span>`;
+      g.items.forEach(it=>{
+        const b=document.createElement('button');
+        b.textContent=it[0];b.dataset.g=gi;b.dataset.v=it[1];
+        b.onclick=()=>{g.set(it[1]);sim();};
+        row.appendChild(b);
+      });
+      quick.appendChild(row);
+    });
+
+    // ----- Perbarui tampilan sesuai simulator -----
+    function updateViz(){
+      const P=+$('P').value, A=+$('A').value, C=+$('C').value, Tv=+$('T').value;
+      V.P=P; V.ci=$('C').selectedIndex; V.bad=Tv>0.1; V.R=C+Tv; V.t=A+P*V.R;
+      const col=tempColor(V.t);
+      $('chipR').setAttribute('fill',col);
+      $('chipHalo').setAttribute('fill',col);
+      $('chipHalo').setAttribute('fill-opacity',Math.max(0.05,Math.min(0.55,(V.t-45)/100)).toFixed(2));
+      $('chipTxt').textContent=Math.round(V.t)+'°C';
+      const pr=$('pasteR');
+      if(V.bad){pr.setAttribute('fill-opacity','0.2');pr.setAttribute('stroke','#dfe5ee');pr.setAttribute('stroke-dasharray','6 5');}
+      else{pr.setAttribute('fill-opacity','1');pr.setAttribute('stroke','none');pr.removeAttribute('stroke-dasharray');}
+      $('gaps').style.display=V.bad?'block':'none';
+      $('finsLbl').textContent=finsLabels[V.ci];
+      $('fanLbl').textContent=V.ci===0?'Tanpa kipas':'Kipas';
+      $('blades').style.opacity=V.ci===0?'0.25':'1';
+      $('fanFrame').style.opacity=V.ci===0?'0.5':'1';
+      quick.querySelectorAll('button').forEach(b=>b.classList.toggle('on',Q[+b.dataset.g].get()==+b.dataset.v));
+      if(sel) showInfo(sel,prefix);
+    }
+    window.updateViz=updateViz;
+
+    // ----- Animasi -----
+    const heatG=$('heatG'), airG=$('airG');
+    const H=[], AR=[];
+    function resetH(p,rand){p.x=282+Math.random()*136;p.y=rand?332-Math.random()*160:332;}
+    function resetA(a,rand){
+      a.gy=183+15*Math.floor(Math.random()*7);
+      a.x=290+Math.random()*120;
+      a.y=rand?162+Math.random()*(a.gy-162):162;
+      a.m=0;a.d=a.x<350?-1:1;
+    }
+    for(let i=0;i<32;i++){
+      const c=document.createElementNS(NS,'circle');c.setAttribute('r','4.5');heatG.appendChild(c);
+      const p={el:c,x:0,y:0};resetH(p,true);H.push(p);
+    }
+    for(let i=0;i<18;i++){
+      const c=document.createElementNS(NS,'circle');c.setAttribute('r','3.2');airG.appendChild(c);
+      const a={el:c,x:0,y:0,m:0,gy:0,d:1};resetA(a,true);AR.push(a);
+    }
+    let last=0, ang=0;
+    function loop(ts){
+      requestAnimationFrame(loop);
+      if(!$('solusi').classList.contains('active')||document.hidden){last=ts;return;}
+      const dt=Math.min(2.5,(ts-last)/16.7||1);last=ts;
+
+      const n=Math.round(4+(V.P-5)/295*28);
+      const sp=0.55/V.R*dt;
+      H.forEach((p,i)=>{
+        if(i>=n){p.el.setAttribute('opacity','0');return;}
+        let s=sp;
+        if(V.bad&&p.y<336&&p.y>318) s*=0.3;
+        p.y-=s;
+        if(p.y<300){const tx=p.x<350?297:417;p.x+=(tx-p.x)*0.04*dt;}
+        if(p.y<172) resetH(p,false);
+        const pg=Math.max(0,Math.min(1,(332-p.y)/160));
+        p.el.setAttribute('cx',p.x.toFixed(1));
+        p.el.setAttribute('cy',p.y.toFixed(1));
+        p.el.setAttribute('fill',heatColor(pg));
+        p.el.setAttribute('opacity',pg>0.9?((1-pg)*10).toFixed(2):'1');
+      });
+
+      const af=airF[V.ci]*dt;
+      const tf=Math.max(0.3,Math.min(1,(V.t-30)/70));
+      AR.forEach(a=>{
+        if(a.m===0){a.y+=2*af;if(a.y>=a.gy)a.m=1;}
+        else{a.x+=a.d*2.2*af;}
+        if(a.x<95||a.x>605) resetA(a,false);
+        const k=Math.min(1,Math.abs(a.x-350)/230);
+        a.el.setAttribute('cx',a.x.toFixed(1));
+        a.el.setAttribute('cy',a.y.toFixed(1));
+        a.el.setAttribute('fill',a.m===0?'#3ab8ff':lerpC('#3ab8ff','#ff8a3d',k*tf));
+        a.el.setAttribute('opacity',a.m===0?'0.85':(0.85*(1-k*0.7)).toFixed(2));
+      });
+
+      ang=(ang+fanSpin[V.ci]*dt)%360;
+      $('blades').setAttribute('transform','rotate('+ang.toFixed(1)+' 350 93)');
+    }
+    requestAnimationFrame(loop);
+    updateViz();
+  })();
+
+  // ---------- Kuis: 10 soal acak dari 50 ----------
+  const bank=`Panas pada chip terutama berasal dari|Listrik yang mengalir lewat miliaran transistor|Gesekan udara|Cahaya sekitar|Debu di luar
+Satuan suhu chip yang umum dipakai adalah|°C|Volt|Hertz|Byte
+TDP adalah singkatan dari|Thermal Design Power|Total Data Power|Thermal Direct Pressure|Transistor Daya Panas
+TDP menunjukkan|Perkiraan panas yang harus dibuang pendingin|Kecepatan internet|Jumlah RAM|Ukuran layar
+Energi listrik di dalam chip pada akhirnya hampir seluruhnya menjadi|Panas|Massa|Suara|Cahaya terang
+Thermal throttling adalah|Penurunan kecepatan otomatis saat terlalu panas|Menaikkan clock|Membersihkan debu|Menambah RAM
+Tujuan thermal throttling adalah|Melindungi chip dari kerusakan|Menghemat internet|Mempercantik tampilan|Mengisi baterai
+Suhu CPU saat idle yang normal kira-kira|30–50°C|90–100°C|0–10°C|120–150°C
+Suhu CPU saat beban berat yang masih wajar|60–85°C|10–20°C|Di bawah 0°C|200°C
+Batas suhu throttling CPU modern sekitar|95–100°C|40°C|55°C|20°C
+Bahan dasar utama chip adalah|Silikon|Besi|Kayu|Plastik
+Transistor yang makin kecil dan rapat membuat panas|Makin terkonsentrasi di area kecil|Hilang sendiri|Selalu dingin|Tidak ada bedanya
+Kebocoran arus (leakage) pada transistor|Menambah panas walau chip tidak sibuk|Mengurangi panas|Menguatkan sinyal wifi|Mendinginkan chip
+Jika panas tidak dibuang, suhu chip akan|Terus naik|Turun|Tetap 0°C|Menjadi stabil dingin
+Tiga cara perpindahan panas adalah|Konduksi, konveksi, radiasi|Gravitasi, magnet, listrik|Cair, padat, gas|Induksi, osmosis, difusi
+Menaikkan frekuensi (clock) chip akan|Menambah panas|Mengurangi panas|Tidak berpengaruh|Mematikan chip
+Daya dinamis chip kira-kira sebanding dengan kuadrat dari|Voltase|Warna casing|Harga chip|Berat chip
+Menaikkan voltase sedikit saja membuat panas|Naik cukup tajam|Turun|Tidak berubah|Menjadi nol
+Overclock berarti|Memaksa chip bekerja lebih cepat dari standar|Membersihkan chip|Mengganti pasta termal|Mematikan core
+Undervolt berarti|Menurunkan voltase agar lebih dingin|Menaikkan voltase|Menambah kipas|Menambah RAM
+Beban yang paling membuat chip panas adalah|Game berat atau rendering video|Membaca teks|Layar standby|Musik ringan
+Hotspot pada chip adalah|Titik terpanas di dalam chip|Jenis kipas|Merek pasta termal|Nama kabel
+Debu di kipas dan heatsink menyebabkan|Aliran udara terhambat sehingga suhu naik|Suhu turun|Kipas jadi senyap|Chip lebih cepat
+Suhu ruangan yang lebih panas membuat suhu chip|Ikut naik|Turun|Tetap|Menjadi nol
+Laptop di atas kasur mudah panas karena|Lubang udara tertutup|Kasur sangat dingin|Kasur bermagnet|Listrik berkurang
+GPU saat bermain game biasanya|Lebih panas daripada saat idle|Sama saja|Mati|Lebih dingin
+Pasta termal yang sudah kering menyebabkan|Perpindahan panas buruk|Pendinginan lebih baik|Wifi lancar|Layar lebih terang
+Dampak panas berlebih dalam jangka panjang|Umur komponen memendek|Chip makin awet|RAM bertambah|Baterai tak pernah habis
+Gejala chip terlalu panas yang umum|Tiba-tiba lemot atau restart|Layar lebih terang|Suara lebih jernih|Internet lebih cepat
+Banyak core aktif bersamaan cenderung|Menambah total panas|Mengurangi panas|Tidak berefek|Mendinginkan chip
+Fungsi heatsink adalah|Memperluas permukaan untuk membuang panas|Menambah listrik|Menyimpan data|Mengunci casing
+Bahan heatsink yang umum adalah|Aluminium dan tembaga|Kayu|Karet|Kaca
+Dibanding aluminium, tembaga|Lebih baik menghantar panas|Lebih buruk menghantar panas|Sama persis|Tidak menghantar panas
+Fungsi thermal paste adalah|Mengisi celah mikroskopis antara chip dan heatsink|Merekatkan casing|Mendinginkan langsung|Mengisi baterai
+Cara mengoles pasta termal yang benar|Tipis dan merata|Setebal mungkin|Tidak perlu dioles|Diganti air
+Heat pipe bekerja dengan prinsip|Cairan menguap lalu mengembun|Listrik tegangan tinggi|Magnet|Angin saja
+Vapor chamber adalah|Versi pelat datar dari heat pipe|Jenis kipas|Kabel daya|Pasta termal
+AIO pada pendingin adalah singkatan dari|All-In-One|Air In Output|Auto Intake Oxygen|Active Ion Overclock
+Pada pendingin cair, panas akhirnya dibuang melalui|Radiator|Baterai|Layar|RAM
+Keunggulan custom loop adalah|Daya dingin tinggi dan bisa diatur|Murah dan tanpa perawatan|Tidak butuh pompa|Selalu paling senyap
+Airflow casing yang baik|Udara dingin masuk depan, panas keluar belakang atau atas|Semua kipas meniup ke dalam|Tanpa kipas sama sekali|Casing ditutup rapat
+Tekanan positif pada casing berarti|Udara masuk lebih banyak daripada keluar|Udara keluar lebih banyak|Tanpa kipas|Ruang hampa udara
+Kipas yang berputar lebih kencang biasanya|Lebih dingin tetapi lebih berisik|Lebih senyap|Tidak berpengaruh|Lebih panas
+Pendingin pasif adalah pendingin yang|Tidak memakai kipas|Memakai kipas besar|Memakai air|Memakai es
+Liquid metal sebagai pasta termal|Sangat baik menghantar panas tetapi berisiko korsleting|Aman tanpa risiko|Merupakan isolator|Selalu paling murah
+Cara termudah menurunkan suhu laptop|Bersihkan debu dan beri sirkulasi udara|Simpan di freezer|Tutup lubang udara|Tambah stiker
+Menyimpan chip di freezer berbahaya karena|Terjadi kondensasi air|Terlalu aman|Menambah RAM|Mempercepat chip
+Cooling pad laptop berfungsi untuk|Menambah aliran udara ke bagian bawah laptop|Menambah baterai|Mengisi daya|Menambah RAM
+Pendinginan nitrogen cair biasanya dipakai untuk|Rekor overclock|Pemakaian harian|Laptop sekolah|Komputer kantor
+Pendinginan terbaik adalah|Gabungan airflow baik, pasta bagus, heatsink cukup, dan perawatan|Hanya membeli kipas termahal|Hanya mengganti pasta|Mengabaikan debu`.split("\n").map(l=>{const [q,c,...w]=l.split("|");return {q,c,w};});
+
+  function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+  let qs=[], qi=0, score=0;
+  function newQuiz(){
+    qs=shuf(bank).slice(0,10).map(x=>{const o=shuf([x.c,...x.w]);return {q:x.q+'?',o:o,a:o.indexOf(x.c)};});
+    qi=0;score=0;
+  }
+  function showQ(){
+    const box=$('quiz');
+    if(qi>=qs.length){
+      box.innerHTML=`<h3>Skor kamu: ${score} / ${qs.length}</h3><p class="small">${score>=9?'Mantap! Kamu paham materinya 🎉':score>=6?'Bagus! Ulangi bagian yang masih kurang.':'Coba baca lagi bagian Masalah dan Data, lalu ulangi.'}</p><button class="btn cool" id="again">Ulangi (soal baru)</button>`;
+      $('again').onclick=()=>{newQuiz();showQ();};
+      return;
+    }
+    const q=qs[qi];
+    box.innerHTML=`<p class="small">Pertanyaan ${qi+1} dari ${qs.length}</p><h3>${q.q}</h3>`+
+      q.o.map((t,i)=>`<button class="opt" data-i="${i}">${t}</button>`).join('');
+    box.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i;
+      box.querySelectorAll('.opt').forEach(x=>x.disabled=true);
+      if(i===q.a){b.classList.add('right');score++;}
+      else{b.classList.add('wrong');box.querySelectorAll('.opt')[q.a].classList.add('right');}
+      setTimeout(()=>{qi++;showQ();},1100);
+    });
+  }
+  newQuiz();
+  showQ();
+
+  // ---------- Mode gelap / terang ----------
+  (function(){
+    const btn=$('themeBtn'), root=document.documentElement;
+    let th='dark';
+    try{th=localStorage.getItem('chipcool-theme')||'dark';}catch(e){}
+    function apply(){
+      root.setAttribute('data-theme',th);
+      btn.textContent=th==='dark'?'☀️ Terang':'🌙 Gelap';
+      try{localStorage.setItem('chipcool-theme',th);}catch(e){}
+    }
+    btn.onclick=()=>{th=th==='dark'?'light':'dark';apply();};
+    apply();
+  })();
+
+  // ---------- Pencatatan data percobaan ----------
+  const CN=['Pasif','Laptop','PC','Water (AIO)'], CC=['#ff5a36','#ffb020','#3ab8ff','#2ecc8f'];
+  let LOG=[];
+  try{LOG=JSON.parse(localStorage.getItem('chipcool-log')||'[]');}catch(e){LOG=[];}
+  function saveLog(){try{localStorage.setItem('chipcool-log',JSON.stringify(LOG));}catch(e){}}
+  function fit(pts){
+    const n=pts.length,sx=pts.reduce((s,p)=>s+p.P,0),sy=pts.reduce((s,p)=>s+p.t,0);
+    const sxx=pts.reduce((s,p)=>s+p.P*p.P,0),sxy=pts.reduce((s,p)=>s+p.P*p.t,0);
+    const d=n*sxx-sx*sx; if(!d) return null;
+    const b=(n*sxy-sx*sy)/d; return {b:b,a:(sy-b*sx)/n};
+  }
+  function drawLog(){
+    const tb=$('logBody');
+    tb.innerHTML=LOG.length?LOG.map((r,i)=>`<tr><td>${i+1}</td><td>${r.P}</td><td>${r.A}</td><td><span class="chip-b" style="background:${CC[r.ci]}">${CN[r.ci]}</span></td><td>${r.bad?'Kering':'Baru'}</td><td><b>${r.t.toFixed(1)}</b></td><td>${(r.t-r.A).toFixed(1)}</td><td><button class="del" data-i="${i}" title="Hapus baris">✕</button></td></tr>`).join(''):'<tr><td colspan="8" class="small">Belum ada data. Atur simulasi lalu klik Catat Data.</td></tr>';
+    tb.querySelectorAll('.del').forEach(b=>b.onclick=()=>{LOG.splice(+b.dataset.i,1);saveLog();drawLog();});
+
+    const W=400,H=290,l=44,r=14,t=16,bt=40,xm=300,y0=20;
+    const ym=Math.max(110,Math.ceil((Math.max(0,...LOG.map(x=>x.t))+5)/10)*10);
+    const X=v=>l+v/xm*(W-l-r), Y=v=>H-bt-(v-y0)/(ym-y0)*(H-bt-t);
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafik suhu chip terhadap daya">`;
+    for(let i=0;i<=5;i++){const v=y0+(ym-y0)*i/5;s+=`<line class="gl" x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tx" x="${l-6}" y="${Y(v)+4}" text-anchor="end">${Math.round(v)}</text>`;}
+    for(let v=0;v<=xm;v+=50){s+=`<line class="gl" x1="${X(v)}" x2="${X(v)}" y1="${t}" y2="${H-bt}"/><text class="tx" x="${X(v)}" y="${H-bt+16}" text-anchor="middle">${v}</text>`;}
+    s+=`<line x1="${l}" x2="${W-r}" y1="${Y(100)}" y2="${Y(100)}" stroke="#ff5a36" stroke-dasharray="5 4"/><text class="tx" x="${W-r-2}" y="${Y(100)-4}" text-anchor="end" style="fill:#ff5a36">batas throttling 100°C</text>`;
+    s+=`<text class="tx" x="${(l+W-r)/2}" y="${H-6}" text-anchor="middle">Daya chip (W)</text><text class="tx" transform="translate(12 ${(t+H-bt)/2}) rotate(-90)" text-anchor="middle">Suhu chip (°C)</text>`;
+    let lg='';
+    [0,1,2,3].forEach(ci=>{
+      const pts=LOG.filter(x=>x.ci===ci); if(!pts.length) return;
+      const nd=new Set(pts.map(p=>p.P)).size, f=nd>=3?fit(pts):null;
+      if(f){const p0=Math.min(...pts.map(p=>p.P)),p1=Math.max(...pts.map(p=>p.P));
+        s+=`<line x1="${X(p0)}" y1="${Y(f.a+f.b*p0)}" x2="${X(p1)}" y2="${Y(f.a+f.b*p1)}" stroke="${CC[ci]}" stroke-width="2" stroke-dasharray="6 4"/>`;}
+      lg+=`<div><i class="dot" style="background:${CC[ci]}"></i><b>${CN[ci]}</b>: ${f?'garis tren ≈ '+f.b.toFixed(2)+' °C per W':'perlu ≥3 titik daya berbeda untuk garis tren (baru '+nd+')'}</div>`;
+    });
+    LOG.forEach((x,i)=>{s+=`<circle cx="${X(x.P)}" cy="${Y(x.t)}" r="5.5" fill="${CC[x.ci]}" style="stroke:var(--card);stroke-width:1.5"/><text class="tx" x="${X(x.P)}" y="${Y(x.t)-9}" text-anchor="middle">${i+1}</text>`;});
+    $('logChart').innerHTML=s+'</svg>';
+    $('logLegend').innerHTML=lg||'Belum ada titik data.';
+  }
+  $('logAdd').onclick=()=>{
+    const P=+$('P').value,A=+$('A').value,ci=$('C').selectedIndex,bad=$('T').selectedIndex===1;
+    const t=A+P*((+$('C').value)+(+$('T').value));
+    LOG.push({P:P,A:A,ci:ci,bad:bad,t:Math.round(t*10)/10});
+    saveLog();drawLog();
+  };
+  $('logClr').onclick=()=>{LOG=[];saveLog();drawLog();};
+  $('logCsv').onclick=()=>{
+    if(!LOG.length) return;
+    const rows=['No,Daya (W),Suhu ruangan (C),Pendingin,Pasta termal,Suhu chip (C),Delta T (C)'].concat(LOG.map((r,i)=>[i+1,r.P,r.A,CN[r.ci],r.bad?'Kering':'Baru',r.t,(r.t-r.A).toFixed(1)].join(',')));
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+    a.download='data-chipcool.csv';a.click();
+  };
+  drawLog();
+</script>
+<!-- ===== MODE 3D: tempel tepat sebelum </body>. Tanpa library luar, tanpa internet. ===== -->
+<script>
+(function(){
+  const $=id=>document.getElementById(id), svg=$('vizSvg'), viz=svg.parentNode;
+  const btn=document.createElement('button');
+  btn.className='btn'; btn.textContent='🧊 Mode 3D'; btn.style.cssText='margin:0 0 10px';
+  viz.insertBefore(btn,$('quick'));
+  const box=document.createElement('div');
+  box.style.cssText='display:none;position:relative;width:100%;aspect-ratio:7/6;border-radius:10px;overflow:hidden;background:var(--card2)';
+  const cv=document.createElement('canvas');
+  cv.style.cssText='display:block;width:100%;height:100%;touch-action:pan-y;cursor:grab';
+  const tag=document.createElement('div');
+  tag.style.cssText='position:absolute;left:10px;top:8px;font-size:.8rem;color:var(--muted);pointer-events:none';
+  const ctl=document.createElement('div');
+  ctl.style.cssText='position:absolute;right:8px;bottom:8px;display:flex;gap:6px';
+  box.appendChild(cv); box.appendChild(tag); box.appendChild(ctl); viz.insertBefore(box,svg);
+  const ctx=cv.getContext('2d');
+
+  let on=false,th=.7,ph=1,dist=11,auto=false,W=0,Hh=0,F=1,cam,items=[],hits=[],bl=0,last=0;
+  const mkb=(t,f,tt)=>{const b=document.createElement('button');b.textContent=t;b.title=tt;
+    b.style.cssText='width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:1.1rem;cursor:pointer';
+    b.onclick=f;ctl.appendChild(b);};
+  mkb('＋',()=>{dist=Math.max(7,dist-1.5);},'Zoom in');
+  mkb('−',()=>{dist=Math.min(20,dist+1.5);},'Zoom out');
+  mkb('↕',()=>{ph=ph>=1.5?.5:Math.min(1.55,ph+.35);},'Ubah sudut');
+  mkb('⟳',()=>{auto=!auto;},'Putar otomatis');
+
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const norm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];};
+  const rgb=h=>[h>>16&255,h>>8&255,h&255], mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+  const tempRGB=t=>t<=50?rgb(0x2ecc8f):t<=80?mix(rgb(0x2ecc8f),rgb(0xffb020),(t-50)/30):mix(rgb(0xffb020),rgb(0xff3b1f),Math.min(1,(t-80)/25));
+  const heatRGB=p=>p<.55?mix(rgb(0xff5a36),rgb(0xffb020),p/.55):mix(rgb(0xffb020),rgb(0x3ab8ff),(p-.55)/.45);
+  const css=c=>'rgb('+c.map(Math.round).join(',')+')';
+  const LT=norm([.4,.8,.5]);
+  const FACES=[[[1,0,0],[1,3,7,5]],[[-1,0,0],[0,4,6,2]],[[0,1,0],[2,6,7,3]],[[0,-1,0],[0,1,5,4]],[[0,0,1],[4,5,7,6]],[[0,0,-1],[0,2,3,1]]];
+
+  function setCam(){
+    const T=[0,2,0],sp=Math.sin(ph);
+    const c=[T[0]+dist*sp*Math.sin(th),T[1]+dist*Math.cos(ph),T[2]+dist*sp*Math.cos(th)];
+    const f=norm(sub(T,c)),r=norm(cross(f,[0,1,0])),u=cross(r,f);
+    cam={c:c,f:f,r:r,u:u};
+  }
+  function proj(p){const v=sub(p,cam.c),z=dot(v,cam.f)||.01;return [W/2+dot(v,cam.r)/z*F,Hh/2-dot(v,cam.u)/z*F,z];}
+  const dist3=p=>Math.hypot(p[0]-cam.c[0],p[1]-cam.c[1],p[2]-cam.c[2]);
+
+  function B(cx,cy,cz,w,h,d,col,a,key,ry,zb){
+    ry=ry||0;const s=Math.sin(ry),c=Math.cos(ry),R=p=>[p[0]*c+p[2]*s,p[1],-p[0]*s+p[2]*c];
+    const V=[];
+    for(let i=0;i<8;i++){const p=R([(i&1?1:-1)*w/2,(i&2?1:-1)*h/2,(i&4?1:-1)*d/2]);V.push([p[0]+cx,p[1]+cy,p[2]+cz]);}
+    items.push({z:(zb||0)+dist3([cx,cy,cz]),fn:function(){
+      const P=V.map(proj);
+      FACES.forEach(f=>{
+        const n=R(f[0]),fc=f[1].reduce((q,i)=>[q[0]+V[i][0]/4,q[1]+V[i][1]/4,q[2]+V[i][2]/4],[0,0,0]);
+        if(dot(n,sub(cam.c,fc))<=0)return;
+        const k=.55+.45*Math.max(0,dot(n,LT));
+        ctx.globalAlpha=a;ctx.fillStyle=css(col.map(v=>v*k));
+        ctx.beginPath();f[1].forEach((i,j)=>{if(j)ctx.lineTo(P[i][0],P[i][1]);else ctx.moveTo(P[i][0],P[i][1]);});
+        ctx.closePath();ctx.fill();
+        ctx.globalAlpha=Math.min(1,a+.2);ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=1;ctx.stroke();
+        if(key)hits.push({k:key,p:f[1].map(i=>P[i])});
+      });
+    }});
+  }
+  function D(p,r,col,a,zb){
+    items.push({z:(zb||0)+dist3(p),fn:function(){
+      const q=proj(p);ctx.globalAlpha=a;ctx.fillStyle=css(col);
+      ctx.beginPath();ctx.arc(q[0],q[1],Math.max(1.8,r*F/q[2]),0,7);ctx.fill();
+    }});
+  }
+
+  const HS=[],AS=[];
+  function resetA(a,rand){a.x=(Math.random()-.5)*2.4;a.z=(Math.random()-.5)*2.4;a.gy=1.71+Math.floor(Math.random()*7)*.22;
+    a.y=rand?a.gy+Math.random()*(4.2-a.gy):4.2;a.m=0;a.d=a.x<0?-1:1;return a;}
+  for(let i=0;i<40;i++)HS.push({q:Math.random(),x:(Math.random()-.5)*2,z:(Math.random()-.5)*2});
+  for(let i=0;i<26;i++)AS.push(resetA({},true));
+
+  function frame(dt){
+    const P=+$('P').value,Am=+$('A').value,ci=$('C').selectedIndex,bad=+$('T').value>.1,Rt=+$('C').value+(+$('T').value),t=Am+P*Rt;
+    if(auto)th+=.008*dt;
+    setCam();items=[];hits=[];
+    B(0,.15,0,7,.3,5,rgb(0x1f5d46),1,0,0,500);
+    B(0,.55,0,2.4,.5,2.4,tempRGB(t),1,'p-chip');
+    B(0,.84,0,2.2,.08,2.2,rgb(0xdfe5ee),bad?.25:1,'p-paste');
+    B(0,1.08,0,3.2,.4,3.2,rgb(0xb0703a),1,'p-base');
+    for(let i=0;i<8;i++)B(0,1.6+i*.22,0,3.2,.06,3,rgb(0x7f93ab),.65,'p-fins');
+    [-.9,.9].forEach(x=>B(x,2.43,0,.3,2.3,.3,rgb(0xd68b4f),1,'p-pipe'));
+    const fc=rgb(0x3b475a);
+    B(0,3.6,1.6,3.4,.14,.2,fc,1,'p-fan');B(0,3.6,-1.6,3.4,.14,.2,fc,1,'p-fan');
+    B(1.6,3.6,0,.2,.14,3.4,fc,1,'p-fan');B(-1.6,3.6,0,.2,.14,3.4,fc,1,'p-fan');
+    B(0,3.72,0,.4,.14,.4,fc,1,'p-fan');
+    bl+=[0,.18,.12,.14][ci]*dt;
+    for(let i=0;i<4;i++){const a=bl+i*Math.PI/2;
+      B(.8*Math.cos(a),3.72,-.8*Math.sin(a),1.3,.05,.5,rgb(0x9db0c8),ci===0?.3:1,'p-fan',a);}
+
+    const n=Math.round(4+(P-5)/295*36),sp=.0034/Rt*dt;
+    HS.forEach((s,i)=>{
+      if(i>=n)return;
+      s.q+=sp*(bad&&s.q<.12?.3:1);
+      if(s.q>=1){s.q=0;s.x=(Math.random()-.5)*2;s.z=(Math.random()-.5)*2;}
+      const k=Math.max(0,(s.q-.35)/.65),tx=s.x<0?-.9:.9;
+      D([s.x+(tx-s.x)*k,.8+s.q*2.6,s.z*(1-k*.9)],.09,heatRGB(s.q),1,-500);
+    });
+    const af=[.25,1,.9,1.2][ci]*dt,tf=Math.max(.3,Math.min(1,(t-30)/70));
+    AS.forEach(a=>{
+      if(a.m===0){a.y-=.045*af;if(a.y<=a.gy)a.m=1;}else a.x+=a.d*.05*af;
+      if(Math.abs(a.x)>3.9)resetA(a,false);
+      const k=Math.min(1,Math.abs(a.x)/3.5);
+      D([a.x,a.y,a.z],.07,a.m?mix(rgb(0x3ab8ff),rgb(0xff8a3d),k*tf):rgb(0x3ab8ff),a.m?.85*(1-k*.7):.85,0);
+    });
+
+    ctx.clearRect(0,0,W,Hh);
+    items.sort((a,b)=>b.z-a.z).forEach(it=>it.fn());
+    ctx.globalAlpha=1;
+    tag.textContent='Chip: '+Math.round(t)+'°C  •  seret = putar, ketuk bagian = info';
+  }
+  function loop(ts){
+    requestAnimationFrame(loop);
+    const dt=Math.min(2.5,(ts-last)/16.7||1);last=ts;
+    if(!on||!W||!$('solusi').classList.contains('active')||document.hidden)return;
+    frame(dt);
+  }
+
+  function size(){
+    const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    W=w;Hh=h;F=.5*h/Math.tan(20*Math.PI/180);
+  }
+  if(window.ResizeObserver)new ResizeObserver(size).observe(box);else window.addEventListener('resize',size);
+
+  function inPoly(x,y,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){
+    if((p[i][1]>y)!==(p[j][1]>y)&&x<(p[j][0]-p[i][0])*(y-p[i][1])/(p[j][1]-p[i][1])+p[i][0])c=!c;}return c;}
+  let down=null,moved=0;
+  const end=()=>{down=null;cv.style.cursor='grab';};
+  cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};moved=0;try{cv.setPointerCapture(e.pointerId);}catch(_){}cv.style.cursor='grabbing';});
+  cv.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;
+    moved+=Math.abs(dx)+Math.abs(dy);th-=dx*.01;ph=Math.max(.3,Math.min(1.55,ph-dy*.01));down={x:e.clientX,y:e.clientY};});
+  cv.addEventListener('pointercancel',end);
+  cv.addEventListener('pointerup',e=>{
+    if(down&&moved<6){const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+      for(let i=hits.length-1;i>=0;i--){if(inPoly(x,y,hits[i].p)){$(hits[i].k).dispatchEvent(new Event('click'));break;}}}
+    end();});
+
+  btn.onclick=()=>{
+    on=!on;
+    svg.style.display=on?'none':'block';box.style.display=on?'block':'none';
+    btn.textContent=on?'📐 Kembali ke 2D':'🧊 Mode 3D';
+    if(on)size();
+  };
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
